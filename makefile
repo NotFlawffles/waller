@@ -1,2 +1,2 @@
 default:
-	cc main.c -lraylib -o waller
+	cc main.c -lraylib -o waller -ggdb

@@ -13,6 +13,7 @@ static const int WindowFramesPerSecond = 60;
 
 static const char WallpapersPath[] = "/home/notflawffles/Pictures/Wallpapers";
 static const char FallbackPath[] = "/home/notflawffles/.fehbg";
+static const char CursorPath[] = "/home/notflawffles/Programming/waller/assets/miku-cursor.png";
 
 typedef struct {
     const char* path;
@@ -152,6 +153,22 @@ void fallback(const Wallpapers* wallpapers, size_t* selection) {
     }
 }
 
+typedef struct {
+    Texture texture;
+    Vector2 position;
+} Cursor;
+
+Cursor cursor_new(Texture texture, const Vector2 position) {
+    return (Cursor) {
+	texture,
+	position
+    };
+}
+
+void cursor_set_position(Cursor* cursor, const Vector2 position) {
+    cursor->position = position;
+}
+
 int main(int argc, char** argv) {
     const Wallpapers wallpapers = wallpapers_load();
     size_t selection = 0;
@@ -165,44 +182,19 @@ int main(int argc, char** argv) {
     HideCursor();
     ToggleFullscreen();
 
-    bool should_redraw = true;
     Textures textures = textures_load(&wallpapers);
 
     fallback(&wallpapers, &selection);
 
-    int left_frames = 0;
-    int left_size = 30;
-    Color left_color = WHITE;
-
-    int right_frames = 0;
-    int right_size = 30;
-    Color right_color = WHITE;
+    Cursor cursor = cursor_new(LoadTexture(CursorPath), GetMousePosition());
 
     while (!WindowShouldClose()) {
 	BeginDrawing();
-    
-	if (should_redraw) {
-	    ClearBackground(BLACK);
-	    DrawTexture(textures.container[selection], 0, 0, WHITE);
-	    DrawText("<", 10, GetScreenHeight() / 2.0 - left_size / 2.0, left_size, left_color);
-	    DrawText(">", GetScreenWidth() - 5 - right_size / 2.0, GetScreenHeight() / 2.0 - right_size / 2.0, right_size, right_color);
-
-	    const Vector2 text_size = MeasureTextEx(GetFontDefault(), wallpapers.container[selection].name, 30, 0);
-	    DrawText(wallpapers.container[selection].name, GetScreenWidth() / 2.0 - text_size.x / 2.0, text_size.y / 2.0, 30, WHITE);
-
-	    should_redraw = false;
-	}
 
 	if (IsKeyPressed(KEY_RIGHT) && selection < wallpapers.size - 1) {
 	    selection++;
-	    right_size = 50;
-	    right_color = GREEN;
-	    should_redraw = true;
 	} else if (IsKeyPressed(KEY_LEFT) && selection > 0) {
 	    selection--;
-	    left_size = 50;
-	    left_color = GREEN;
-	    should_redraw = true;
 	}
 
 	if (IsKeyPressed(KEY_ENTER)) {
@@ -210,26 +202,17 @@ int main(int argc, char** argv) {
 	    break;
 	}
 
-	if (left_size == 50) {
-	    if (left_frames < 45) {
-		left_frames++;
-	    } else {
-		left_size = 30;
-		left_color = WHITE;
-		should_redraw = true;
-	    }
-	}
+	cursor_set_position(&cursor, GetMousePosition());
 
-	if (right_size == 50) {
-	    if (right_frames < 45) {
-		right_frames++;
-	    } else {
-		right_size = 30;
-		right_color = WHITE;
-		should_redraw = true;
-	    }
-	}
+ 	ClearBackground(BLACK);
+	DrawTexture(textures.container[selection], 0, 0, WHITE);
+	DrawText("<", 10, GetScreenHeight() / 2.0 - 30 / 2.0, 30, WHITE);
+	DrawText(">", GetScreenWidth() - 5 - 30 / 2.0, GetScreenHeight() / 2.0 - 30 / 2.0, 30, WHITE);
 
+	const Vector2 text_size = MeasureTextEx(GetFontDefault(), wallpapers.container[selection].name, 30, 0);
+	DrawText(wallpapers.container[selection].name, GetScreenWidth() / 2.0 - text_size.x / 2.0, text_size.y / 2.0, 30, WHITE);
+
+	DrawTexture(cursor.texture, cursor.position.x, cursor.position.y, WHITE);
 	EndDrawing();
     }
 
