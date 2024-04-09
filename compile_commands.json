@@ -1,0 +1,18 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-c",
+      "-Wall",
+      "-Wextra",
+      "-pedantic",
+      "-ggdb",
+      "-o",
+      "waller",
+      "src/waller.c"
+    ],
+    "directory": "/home/notflawffles/Programming/waller",
+    "file": "/home/notflawffles/Programming/waller/src/waller.c",
+    "output": "/home/notflawffles/Programming/waller/waller"
+  }
+]
