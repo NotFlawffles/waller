@@ -84,9 +84,20 @@ Textures textures_load(const Wallpapers *wallpapers) {
 }
 
 void set_wallpaper(const Wallpapers *wallpapers, const size_t *selection) {
-    char *command = malloc(strlen("feh --bg-scale ") + strlen(wallpapers->container[*selection].path));
-    sprintf(command, "feh --bg-scale %s", wallpapers->container[*selection].path);
+    char *command = malloc(strlen("feh --no-fehbg --bg-scale ") + strlen(wallpapers->container[*selection].path) + 3);
+    sprintf(command, "feh --no-fehbg --bg-scale '%s'\n", wallpapers->container[*selection].path);
     system(command);
+
+    FILE* fehbg = fopen(FallbackPath, "w");
+
+    if (!fehbg) {
+        return;
+    }
+
+    fwrite("#!/bin/sh\n", strlen("#!/bin/sh\n"), sizeof(char), fehbg);
+    fwrite(command, strlen(command), sizeof(char), fehbg);
+
+    fclose(fehbg);
 }
 
 void print_help() {
@@ -176,11 +187,10 @@ int main(int argc, char **argv) {
         return command_mode_main(argv, &wallpapers, &selection);
     }
 
-    SetConfigFlags(FLAG_WINDOW_UNDECORATED | FLAG_WINDOW_RESIZABLE);
+    SetConfigFlags(FLAG_FULLSCREEN_MODE | FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT | FLAG_WINDOW_UNDECORATED | FLAG_WINDOW_RESIZABLE);
     InitWindow(WindowWidth, WindowHeight, WindowTitle);
     SetTargetFPS(WindowFramesPerSecond);
     HideCursor();
-    ToggleFullscreen();
 
     Textures textures = textures_load(&wallpapers);
 
@@ -189,6 +199,8 @@ int main(int argc, char **argv) {
     Cursor cursor = cursor_new(LoadTexture(CursorPath), GetMousePosition());
 
     unsigned short counter = 0;
+
+    bool gui_active = true;
 
     while (!WindowShouldClose()) {
         BeginDrawing();
@@ -217,6 +229,16 @@ int main(int argc, char **argv) {
 
         unsigned short ui_disappearance_frames_delay = GetFPS() * 3;
 
+        if (IsKeyPressed(KEY_SPACE)) {
+            if (gui_active) {
+                counter = ui_disappearance_frames_delay;
+                gui_active = false;
+            } else {
+                counter = 0;
+                gui_active = true;
+            }
+        }
+
         if (counter < ui_disappearance_frames_delay) {
             DrawText("<", 10, GetRenderHeight() / 2.0 - 30 / 2.0, 30, WHITE);
             DrawText(">", GetRenderWidth() - 5 - 30 / 2.0, GetRenderHeight() / 2.0 - 30 / 2.0, 30, WHITE);
@@ -227,6 +249,10 @@ int main(int argc, char **argv) {
                      30, WHITE);
 
             DrawTexture(cursor.texture, cursor.position.x, cursor.position.y, WHITE);
+        }
+
+        if (counter >= ui_disappearance_frames_delay) {
+            gui_active = false;
         }
 
         EndDrawing();
