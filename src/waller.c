@@ -37,9 +37,8 @@ void load_paths(const char *executable_path) {
     sprintf(FallbackPath, "%s/.fehbg", home_path);
 
     char *real_cursor_path = get_directory_path_from_file(executable_path);
-    CursorPath = malloc(strlen(real_cursor_path) + strlen("/assets/miku-cursor.png") + 1);
-    sprintf(CursorPath, "%s/assets/miku-cursor.png", real_cursor_path);
-    puts(CursorPath);
+    CursorPath = malloc(strlen(real_cursor_path) + strlen("../assets/miku-cursor.png"));
+    sprintf(CursorPath, "%s/../assets/miku-cursor.png", real_cursor_path);
 }
 
 Wallpaper wallpaper_new(const char *path) {
