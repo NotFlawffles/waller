@@ -10,14 +10,37 @@ static const int WindowHeight = 1080;
 static const char WindowTitle[] = "Waller";
 static const int WindowFramesPerSecond = 60;
 
-static const char WallpapersPath[] = "/home/notflawffles/Pictures/Wallpapers";
-static const char FallbackPath[] = "/home/notflawffles/.fehbg";
-static const char CursorPath[] = "/home/notflawffles/Programming/waller/assets/miku-cursor.png";
+static char *WallpapersPath;
+static char *FallbackPath;
+static char *CursorPath;
 
 typedef struct {
     const char *path;
     const char *name;
 } Wallpaper;
+
+char *get_directory_path_from_file(const char *path) {
+    size_t new_size = strlen(path) - 1;
+    for (; path[new_size] != '/'; new_size--);
+    char *directory_path = malloc(new_size);
+    memcpy(directory_path, path, new_size);
+    return directory_path;
+}
+
+void load_paths(const char *executable_path) {
+    const char *home_path = getenv("HOME");
+
+    WallpapersPath = malloc(strlen(home_path) + strlen("/Pictures/Wallpapers/"));
+    sprintf(WallpapersPath, "%s/Pictures/Wallpapers", home_path);
+
+    FallbackPath = malloc(strlen(home_path) + strlen("/.fehbg"));
+    sprintf(FallbackPath, "%s/.fehbg", home_path);
+
+    char *real_cursor_path = get_directory_path_from_file(executable_path);
+    CursorPath = malloc(strlen(real_cursor_path) + strlen("/assets/miku-cursor.png") + 1);
+    sprintf(CursorPath, "%s/assets/miku-cursor.png", real_cursor_path);
+    puts(CursorPath);
+}
 
 Wallpaper wallpaper_new(const char *path) {
     return (Wallpaper) {
@@ -180,6 +203,8 @@ void cursor_set_position(Cursor *cursor, const Vector2 position) {
 }
 
 int main(int argc, char **argv) {
+    load_paths(argv[0]);
+
     const Wallpapers wallpapers = wallpapers_load();
     size_t selection = 0;
 
@@ -240,8 +265,13 @@ int main(int argc, char **argv) {
         }
 
         if (counter < ui_disappearance_frames_delay) {
-            DrawText("<", 10, GetRenderHeight() / 2.0 - 30 / 2.0, 30, WHITE);
-            DrawText(">", GetRenderWidth() - 5 - 30 / 2.0, GetRenderHeight() / 2.0 - 30 / 2.0, 30, WHITE);
+            if (selection) {
+		DrawText("<", 10, GetRenderHeight() / 2.0 - 30 / 2.0, 30, WHITE);
+	    }
+
+            if (selection + 1 < wallpapers.size) {
+		DrawText(">", GetRenderWidth() - 5 - 30 / 2.0, GetRenderHeight() / 2.0 - 30 / 2.0, 30, WHITE);
+	    }
 
             const Vector2 text_size = MeasureTextEx(GetFontDefault(), wallpapers.container[selection].name, 30, 0);
             DrawText(wallpapers.container[selection].name, GetRenderWidth() / 2.0 - text_size.x / 2.0,
