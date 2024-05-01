@@ -11,7 +11,7 @@ default: $(SRC)
 
 install:
 	@make default
-	@sudo echo "$(CURDIR)/$(OBJECT)" > $(INSTALLATION_TARGET)
+	@sudo echo "$(CURDIR)/$(OBJECT) $@" > $(INSTALLATION_TARGET)
 	@sudo chmod +x $(INSTALLATION_TARGET)
 
 clean: $(OBJECT)
