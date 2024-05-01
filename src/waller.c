@@ -4,6 +4,7 @@
 #include <dirent.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 static const int WindowWidth = 1920;
 static const int WindowHeight = 1080;
@@ -14,10 +15,17 @@ static char *WallpapersPath;
 static char *FallbackPath;
 static char *CursorPath;
 
+static bool should_actually_close = false;
+
 typedef struct {
     const char *path;
     const char *name;
 } Wallpaper;
+
+size_t get_random_number(size_t minimum, size_t maximum) {
+    srand(time(NULL));
+    return minimum + rand() % (maximum + 1 - minimum);
+}
 
 char *get_directory_path_from_file(const char *path) {
     size_t new_size = strlen(path) - 1;
@@ -106,6 +114,10 @@ Textures textures_load(const Wallpapers *wallpapers) {
 }
 
 void set_wallpaper(const Wallpapers *wallpapers, const size_t *selection) {
+    if (memcmp(wallpapers->container[*selection].name, "<deleted>", strlen("<deleted>")) == 0) {
+	return;
+    }
+
     char *command = malloc(strlen("feh --no-fehbg --bg-scale ") + strlen(wallpapers->container[*selection].path) + 3);
     sprintf(command, "feh --no-fehbg --bg-scale '%s'\n", wallpapers->container[*selection].path);
     system(command);
@@ -120,13 +132,20 @@ void set_wallpaper(const Wallpapers *wallpapers, const size_t *selection) {
     fwrite(command, strlen(command), sizeof(char), fehbg);
 
     fclose(fehbg);
+    should_actually_close = true;
+}
+
+void delete_wallpaper(Wallpapers *wallpapers, size_t *selection) {
+    remove(wallpapers->container[*selection].path);
+    wallpapers->container[*selection].name = "<deleted>";
 }
 
 void print_help() {
     puts("-- waller usage --\n\n"
-         "waller (alone)		launches gui\n"
-         "waller s[et] <number>	sets wallpaper depending on its order of loading\n"
-         "waller l[ist]		lists wallpapers\n"
+         "waller (alone)			launches gui\n"
+         "waller s[et] <number>		sets wallpaper depending on its order of loading\n"
+	 "waller r[andom]       	sets a random wallpapers\n"
+         "waller l[ist]			lists wallpapers\n"
          "waller (h[help]|.*)		prints this message");
 }
 
@@ -145,6 +164,13 @@ int command_mode_main(char **argv, const Wallpapers *wallpapers, size_t *selecti
         for (size_t index = 0; index < wallpapers->size; index++) {
             puts(wallpapers->container[index].name);
         }
+    } else if (memcmp(command, "r", 1) == 0) {
+	if (!wallpapers->size) {
+	    return 1;
+	} else {
+	    *selection = get_random_number(0, wallpapers->size);
+	    set_wallpaper(wallpapers, selection);
+	}
     } else if (memcmp(command, "h", 1) == 0) {
         print_help();
     } else {
@@ -204,7 +230,7 @@ void cursor_set_position(Cursor *cursor, const Vector2 position) {
 int main(int argc, char **argv) {
     load_paths(argv[0]);
 
-    const Wallpapers wallpapers = wallpapers_load();
+    Wallpapers wallpapers = wallpapers_load();
     size_t selection = 0;
 
     if (argc > 1) {
@@ -226,7 +252,7 @@ int main(int argc, char **argv) {
 
     bool gui_active = true;
 
-    while (!WindowShouldClose()) {
+    while (!WindowShouldClose() && !should_actually_close) {
         BeginDrawing();
 
         if (GetKeyPressed() || (GetMouseX() != cursor.position.x && GetMouseY() != cursor.position.y)) {
@@ -241,8 +267,11 @@ int main(int argc, char **argv) {
 
         if (IsKeyPressed(KEY_ENTER)) {
             set_wallpaper(&wallpapers, &selection);
-            break;
         }
+
+	if (IsKeyPressed(KEY_D)) {
+	    delete_wallpaper(&wallpapers, &selection);
+	}
 
         cursor_set_position(&cursor, GetMousePosition());
 
