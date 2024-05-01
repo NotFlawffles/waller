@@ -24,7 +24,7 @@ typedef struct {
 
 size_t get_random_number(size_t minimum, size_t maximum) {
     srand(time(NULL));
-    return minimum + rand() % (maximum + 1 - minimum);
+    return minimum + rand() % (maximum - minimum);
 }
 
 char *get_directory_path_from_file(const char *path) {
