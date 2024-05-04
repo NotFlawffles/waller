@@ -248,16 +248,10 @@ int main(int argc, char **argv) {
 
     Cursor cursor = cursor_new(LoadTexture(CursorPath), GetMousePosition());
 
-    unsigned short counter = 0;
-
     bool gui_active = true;
 
     while (!WindowShouldClose() && !should_actually_close) {
         BeginDrawing();
-
-        if (GetKeyPressed() || (GetMouseX() != cursor.position.x && GetMouseY() != cursor.position.y)) {
-            counter = 0;
-        }
 
         if (IsKeyPressed(KEY_RIGHT) && selection < wallpapers.size - 1) {
             selection++;
@@ -280,19 +274,11 @@ int main(int argc, char **argv) {
         DrawTexturePro(textures.container[selection],
                         (Rectangle) {0, 0, textures.container[selection].width, textures.container[selection].height}, (Rectangle) {0, 0, GetRenderWidth(), GetRenderHeight()}, (Vector2) {0, 0}, 0, WHITE);
 
-        unsigned short ui_disappearance_frames_delay = GetFPS() * 3;
-
         if (IsKeyPressed(KEY_SPACE)) {
-            if (gui_active) {
-                counter = ui_disappearance_frames_delay;
-                gui_active = false;
-            } else {
-                counter = 0;
-                gui_active = true;
-            }
+	    gui_active = !gui_active;
         }
 
-        if (counter < ui_disappearance_frames_delay) {
+        if (gui_active) {
             if (selection) {
 		DrawText("<", 10, GetRenderHeight() / 2.0 - 30 / 2.0, 30, WHITE);
 	    }
@@ -309,13 +295,7 @@ int main(int argc, char **argv) {
             DrawTexture(cursor.texture, cursor.position.x, cursor.position.y, WHITE);
         }
 
-        if (counter >= ui_disappearance_frames_delay) {
-            gui_active = false;
-        }
-
         EndDrawing();
-
-        counter++;
     }
 
     CloseWindow();
