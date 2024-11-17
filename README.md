@@ -1,1 +1,1 @@
-![screenshot](https://www.github.com/NotFlawffles/waller/tree/main/screenshots/waller.png")
+![screenshot](https://www.github.com/NotFlawffles/waller/blob/main/screenshots/waller.png)
